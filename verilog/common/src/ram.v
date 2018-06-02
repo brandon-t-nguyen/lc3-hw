@@ -5,6 +5,7 @@
 module spram #(parameter ADDR_WIDTH = 8, DATA_WIDTH = 8, DATA_DEPTH = 256)
     (
         input   wire                    clk,
+        input   wire                    en,
         input   wire                    wr_en,
         input   wire [ADDR_WIDTH-1:0]   addr,
         input   wire [DATA_WIDTH-1:0]   wr_data,
@@ -14,10 +15,12 @@ module spram #(parameter ADDR_WIDTH = 8, DATA_WIDTH = 8, DATA_DEPTH = 256)
     reg [DATA_WIDTH-1:0] mem[0:DATA_DEPTH-1];
 
     always @(posedge clk) begin
-        if (wr_en) begin
-            mem[addr] <= wr_data;
-        end else begin
-            rd_data <= mem[addr];
+        if (en) begin
+            if (wr_en) begin
+                mem[addr] <= wr_data;
+            end else begin
+                rd_data <= mem[addr];
+            end
         end
     end
 endmodule
@@ -29,6 +32,7 @@ endmodule
 module dpram #(parameter ADDR_WIDTH = 8, DATA_WIDTH = 8, DATA_DEPTH = 256)
     (
         input   wire                    clk,
+        input   wire                    en,
         input   wire                    wr_en,
         input   wire [ADDR_WIDTH-1:0]   wr_addr,
         input   wire [DATA_WIDTH-1:0]   wr_data,
@@ -39,9 +43,11 @@ module dpram #(parameter ADDR_WIDTH = 8, DATA_WIDTH = 8, DATA_DEPTH = 256)
     reg [DATA_WIDTH-1:0] mem[0:DATA_DEPTH-1];
 
     always @(posedge clk) begin
-        if (wr_en) begin
-            mem[wr_addr] <= wr_data;
+        if (en) begin
+            if (wr_en) begin
+                mem[wr_addr] <= wr_data;
+            end
+            rd_data <= mem[rd_addr];
         end
-        rd_data <= mem[rd_addr];
     end
 endmodule
