@@ -31,24 +31,26 @@ module test_tristate_buffer;
             #1;
 
             pass = (out_h === exp_out_h[i]);
+            if (!pass)
+                $display("tri_h in=%0d, en=%0d => out=%0d, exp=%0d [%s]", in, en, out_h, exp_out_h[i], `CHECK);
             if (overall_pass)
                 overall_pass = pass;
-            $display("tri_h in=%0d, en=%0d => out=%0d, exp=%0d [%s]", in, en, out_h, exp_out_h[i], `CHECK);
 
 
             pass = (out_l === exp_out_l[i]);
+            if (!pass)
+                $display("tri_l in=%0d, en=%0d => out=%0d, exp=%0d [%s]", in, en, out_l, exp_out_l[i], `CHECK);
             if (overall_pass)
                 overall_pass = pass;
-            $display("tri_l in=%0d, en=%0d => out=%0d, exp=%0d [%s]", in, en, out_l, exp_out_l[i], `CHECK);
 
             $display();
         end
 
 
         if (overall_pass)
-            $display("PASS");
+            $display("test: tsb: PASS");
         else
-            $display("FAIL");
+            $display("test: tsb: FAIL");
 
         $finish();
     end

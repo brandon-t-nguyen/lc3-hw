@@ -42,17 +42,19 @@ module test_register;
             #5;
 
             pass = (d_o === exp_d_o[i]);
+            if (!pass)
+                $display("d_i = %2d, wr_en=%1d => d_o = %2d, exp = %2d [%s]", d_i, wr_en, d_o, exp_d_o[i], `CHECK);
+
             if (overall_pass)
                 overall_pass = pass;
-            $display("d_i = %2d, wr_en=%1d => d_o = %2d, exp = %2d [%s]", d_i, wr_en, d_o, exp_d_o[i], `CHECK);
             #5;
         end
 
 
         if (overall_pass)
-            $display("PASS");
+            $display("test: register: PASS");
         else
-            $display("FAIL");
+            $display("test: register: FAIL");
 
         $finish();
     end
