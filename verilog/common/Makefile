@@ -14,6 +14,10 @@ test_dpram.iver: src/ram.v test/test_ram.v
 	iverilog -s $(subst .iver,,$@) -o $@ $^
 	vvp $@
 
+test_rom.iver: src/rom.v test/test_rom.v
+	iverilog -s $(subst .iver,,$@) -o $@ $^
+	vvp $@
+
 clean:
 	rm -f *.iver
 	rm *.vcd
