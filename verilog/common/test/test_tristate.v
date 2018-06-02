@@ -3,14 +3,17 @@ module test_tristate;
 
     reg in;
     reg en;
-    wire out;
+    wire out_h;
+    wire out_l;
 
-    tristate #(1) ts(in, out, en);
+    tri_h #(1) ts_h(in, out_h, en);
+    tri_l #(1) ts_l(in, out_l, en);
 
     localparam N = 4;
     reg [1:N] test_in = 8'b0011;
     reg [1:N] test_en = 8'b0101;
-    reg [1:N] exp_out = 8'bz0z1;
+    reg [1:N] exp_out_h = 8'bz0z1;
+    reg [1:N] exp_out_l = 8'b0z1z;
 
     integer i;
 
@@ -27,10 +30,18 @@ module test_tristate;
             en = test_en[i];
             #1;
 
-            pass = (out === exp_out[i]);
+            pass = (out_h === exp_out_h[i]);
             if (overall_pass)
                 overall_pass = pass;
-            $display("in=%0d, en=%0d => out=%0d, exp=%0d [%s]", in, en, out, exp_out[i], `CHECK);
+            $display("tri_h in=%0d, en=%0d => out=%0d, exp=%0d [%s]", in, en, out_h, exp_out_h[i], `CHECK);
+
+
+            pass = (out_l === exp_out_l[i]);
+            if (overall_pass)
+                overall_pass = pass;
+            $display("tri_l in=%0d, en=%0d => out=%0d, exp=%0d [%s]", in, en, out_l, exp_out_l[i], `CHECK);
+
+            $display();
         end
 
 
