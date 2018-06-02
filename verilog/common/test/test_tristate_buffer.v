@@ -1,13 +1,13 @@
 `define CHECK (pass ? "PASS" : "FAIL")
-module test_tristate;
+module test_tristate_buffer;
 
     reg in;
     reg en;
     wire out_h;
     wire out_l;
 
-    tri_h #(1) ts_h(in, out_h, en);
-    tri_l #(1) ts_l(in, out_l, en);
+    tsb_h #(1) ts_h(in, out_h, en);
+    tsb_l #(1) ts_l(in, out_l, en);
 
     localparam N = 4;
     reg [1:N] test_in = 8'b0011;
@@ -20,8 +20,8 @@ module test_tristate;
     integer pass;
     integer overall_pass;
     initial begin
-        $dumpfile("test_tristate.vcd");
-        $dumpvars(0, test_tristate);
+        $dumpfile("test_tristate_buffer.vcd");
+        $dumpvars(0, test_tristate_buffer);
 
         overall_pass = 1;
         for (i = 1; i <= N; i = i + 1) begin

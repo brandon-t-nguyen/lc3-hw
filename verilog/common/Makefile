@@ -1,4 +1,4 @@
-test_tristate.iver: src/tristate.v test/test_tristate.v
+test_tristate_buffer.iver: src/tristate_buffer.v test/test_tristate_buffer.v
 	iverilog -o $@ $^
 	vvp $@
 

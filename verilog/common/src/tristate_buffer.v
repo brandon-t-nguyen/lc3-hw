@@ -1,7 +1,7 @@
 /**
  * Tristate buffer: active high
  */
-module tri_h #(parameter WIDTH = 1)
+module tsb_h #(parameter WIDTH = 1)
     (
         input   wire [WIDTH-1:0] in,
         output  wire [WIDTH-1:0] out,
@@ -14,7 +14,7 @@ endmodule
 /**
  * Tristate buffer: active low
  */
-module tri_l #(parameter WIDTH = 1)
+module tsb_l #(parameter WIDTH = 1)
     (
         input   wire [WIDTH-1:0] in,
         output  wire [WIDTH-1:0] out,
