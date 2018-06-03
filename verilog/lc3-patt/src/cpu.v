@@ -30,7 +30,6 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
     );
 
     reg [5:0]   cs; // current state: micro-address
-    wire [5:0]  ns; // next micro-address
 
     /*
      * registers
@@ -50,6 +49,9 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
     reg         r_cc_n;
     reg         r_cc_z;
     reg         r_cc_p;
+
+    // other internal registers
+    reg         r_ben;
 
     /*
      * control store
@@ -262,8 +264,33 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         endcase
     end
 
-    always @(posedge clk) begin
+    /*
+     * microsequencer
+     */
+    reg [5:0]  ns; // next micro-address
 
+    // qualifiers for the usequencer
+    wire q_mem_rdy   = mem_rdy;
+    wire q_branch    = r_ben;
+    wire q_addr_mode = r_ir[11];
+    wire q_priv      = r_priv;
+    wire q_interrupt = int_int;
+    always @(*) begin
+        if (c_ird) begin
+            ns = {12'b0, r_ir[15:12]};
+        end
+        else begin
+            ns[5] = c_j[5];
+            ns[4] = c_j[4] | (q_interrupt && c_cond == 5);
+            ns[3] = c_j[3] | (q_priv      && c_cond == 4);
+            ns[2] = c_j[2] | (q_branch    && c_cond == 2);
+            ns[1] = c_j[1] | (q_mem_rdy   && c_cond == 1);
+            ns[0] = c_j[0] | (q_addr_mode && c_cond == 3);
+        end
+    end
+
+    always @(posedge clk) begin
+        cs <= ns;
     end
 
 endmodule
