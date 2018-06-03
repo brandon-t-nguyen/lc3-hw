@@ -27,4 +27,29 @@ module cpu
         output  wire [2:0]  int_vec_mux,
     );
 
+    reg [5:0]   cs; // current state: micro-address
+    wire [5:0]  ns; // next micro-address
+
+    /*
+     * registers
+     */
+    // register file
+    reg [15:0]  r_reg[0:7];
+
+    // special registers
+    reg [15:0]  r_pc;
+    reg [15:0]  r_ir;
+    reg [15:0]  r_s_usp;    // saved user stack ptr
+    reg [15:0]  r_s_ssp;    // saved user supervisor ptr
+
+    // psr registers
+    reg [0:0]   r_priv;
+    reg [2:0]   r_pri;
+    reg [0:0]   r_cc_n;
+    reg [0:0]   r_cc_z;
+    reg [0:0]   r_cc_p;
+
+    always @(posedge clk) begin
+    end
+
 endmodule
