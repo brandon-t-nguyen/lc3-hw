@@ -22,7 +22,6 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         output  wire        mem_rw,
 
         // interrupt controller interface
-        input   wire        int_int,
         input   wire [2:0]  int_pri,
         output  wire        int_gate_vec,
         output  wire        int_ld_vec,
@@ -275,7 +274,7 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
     wire q_branch    = r_ben;
     wire q_addr_mode = r_ir[11];
     wire q_priv      = r_priv;
-    wire q_interrupt = int_int;
+    wire q_interrupt = int_pri > r_pri;
     always @(*) begin
         if (c_ird) begin
             ns = {12'b0, r_ir[15:12]};
@@ -324,6 +323,14 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         if (c_ld_priv) r_priv <= cb_priv_mux;
         if (c_ld_s_ssp) r_s_ssp <= cb_sr1_out;
         if (c_ld_s_usp) r_s_usp <= cb_sr1_out;
+
+        // TODO: ask Patt what's the deal with LD.Priority
+        // WAR: hardwire this shit
+        if (
+            (c_set_priv && c_ld_priv) || // state 49
+            (c_ld_priv && c_ld_cc)       // state 40
+           )
+           r_pri <= cb_pri_mux;
     end
 
 endmodule
