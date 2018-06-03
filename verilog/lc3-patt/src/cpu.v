@@ -289,6 +289,21 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         end
     end
 
+    /*
+     * bus drivers
+     */
+    tsb_h #(16) tsb_pc(r_pc, bus, c_gt_pc);
+    // MDR handled by memory controller
+    tsb_h #(16) tsb_alu(cb_alu, bus, c_gt_alu);
+    tsb_h #(16) tsb_mar_mux(cb_mar_mux, bus, c_gt_mar_mux);
+    tsb_h #(16) tsb_pc_dec(cb_pc_dec, bus, c_gt_pc_dec);
+
+    tsb_h #(1) tsb_priv(r_priv, bus[15], c_gt_psr);
+    tsb_h #(3) tsb_pri(r_pri, bus[10:8], c_gt_psr);
+    tsb_h #(3) tsb_cc({r_cc_n, r_cc_z, r_cc_p}, bus[2:0], c_gt_psr);
+
+    tsb_h #(16) tsb_sp(cb_sp_mux, bus, c_gt_sp);
+
     always @(posedge clk) begin
         cs <= ns;
     end
