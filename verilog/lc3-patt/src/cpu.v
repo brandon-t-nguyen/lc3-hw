@@ -23,6 +23,7 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
 
         // interrupt controller interface
         input   wire        int_int,
+        input   wire [2:0]  int_pri,
         output  wire        int_gate_vec,
         output  wire        int_ld_vec,
         output  wire [2:0]  int_vec_mux
@@ -53,7 +54,7 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
     /*
      * control store
      */
-    wire [48:0] ctrl;   // control signals
+    wire [48:0] uinst;   // microinstruction
     rom #(.ADDR_WIDTH(6),
           .DATA_WIDTH(49),
           .DATA_DEPTH(64),
@@ -62,49 +63,207 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         control_store
         (
             .addr(cs),
-            .data(ctrl)
+            .data(uinst)
         );
 
     /*
      * control signals
      */
-    wire        c_ird       = ctrl[48];
-    wire [2:0]  c_cond      = ctrl[47:45];
-    wire [5:0]  c_j         = ctrl[44:39];
-    wire        c_ld_mar    = ctrl[38];
-    wire        c_ld_mdr    = ctrl[37];
-    wire        c_ld_ir     = ctrl[36];
-    wire        c_ld_ben    = ctrl[35];
-    wire        c_ld_reg    = ctrl[34];
-    wire        c_ld_cc     = ctrl[33];
-    wire        c_ld_pc     = ctrl[32];
-    wire        c_ld_priv   = ctrl[31];
-    wire        c_ld_s_ssp  = ctrl[30];
-    wire        c_ld_s_usp  = ctrl[29];
-    wire        c_ld_vec    = ctrl[28];
-    wire        c_gt_pc     = ctrl[27];
-    wire        c_gt_mdr    = ctrl[26];
-    wire        c_gt_alu    = ctrl[25];
-    wire        c_gt_marmux = ctrl[24];
-    wire        c_gt_vec    = ctrl[23];
-    wire        c_gt_pc_dec = ctrl[22];
-    wire        c_gt_psr    = ctrl[21];
-    wire        c_gt_sp     = ctrl[20];
-    wire [1:0]  c_pcmux     = ctrl[19:18];
-    wire [1:0]  c_drmux     = ctrl[17:16];
-    wire [1:0]  c_sr1mux    = ctrl[15:14];
-    wire        c_addr1mux  = ctrl[13];
-    wire [1:0]  c_addr2mux  = ctrl[12:11];
-    wire [1:0]  c_spmux     = ctrl[10:9];
-    wire        c_marmux    = ctrl[8];
-    wire [1:0]  c_vecmux    = ctrl[7:6];
-    wire        c_psrmux    = ctrl[5];
-    wire [1:0]  c_aluk      = ctrl[4:3];
-    wire        c_mio_en    = ctrl[2];
-    wire        c_rw        = ctrl[1];
-    wire        c_set_priv  = ctrl[0];
+    wire        c_ird       = uinst[48];
+    wire [2:0]  c_cond      = uinst[47:45];
+    wire [5:0]  c_j         = uinst[44:39];
+    wire        c_ld_mar    = uinst[38]; assign mem_ld_mar = c_ld_mar;
+    wire        c_ld_mdr    = uinst[37]; assign mem_ld_mdr = c_ld_mdr;
+    wire        c_ld_ir     = uinst[36];
+    wire        c_ld_ben    = uinst[35];
+    wire        c_ld_reg    = uinst[34];
+    wire        c_ld_cc     = uinst[33];
+    wire        c_ld_pc     = uinst[32];
+    wire        c_ld_priv   = uinst[31];
+    wire        c_ld_s_ssp  = uinst[30];
+    wire        c_ld_s_usp  = uinst[29];
+    wire        c_ld_vec    = uinst[28]; assign int_ld_vec = c_ld_vec;
+    wire        c_gt_pc     = uinst[27];
+    wire        c_gt_mdr    = uinst[26]; assign mem_gate_mdr = c_gt_mdr;
+    wire        c_gt_alu    = uinst[25];
+    wire        c_gt_mar_mux= uinst[24];
+    wire        c_gt_vec    = uinst[23]; assign int_gate_vec = c_gt_vec;
+    wire        c_gt_pc_dec = uinst[22];
+    wire        c_gt_psr    = uinst[21];
+    wire        c_gt_sp     = uinst[20];
+    wire [1:0]  c_pc_mux    = uinst[19:18];
+    wire [1:0]  c_dr_mux    = uinst[17:16];
+    wire [1:0]  c_sr1_mux   = uinst[15:14];
+    wire        c_addr1_mux = uinst[13];
+    wire [1:0]  c_addr2_mux = uinst[12:11];
+    wire [1:0]  c_sp_mux    = uinst[10:9];
+    wire        c_mar_mux   = uinst[8];
+    wire [1:0]  c_vec_mux   = uinst[7:6]; assign int_vec_mux = c_vec_mux;
+    wire        c_psr_mux   = uinst[5];
+    wire [1:0]  c_aluk      = uinst[4:3];
+    wire        c_mio_en    = uinst[2]; assign mem_mio_en = c_mio_en;
+    wire        c_rw        = uinst[1]; assign mem_rw = c_rw;
+    wire        c_set_priv  = uinst[0];
+
+    /*
+     * combinational signals
+     */
+    // mux results
+    reg [15:0] cb_pc_mux;
+    reg [2:0]  cb_dr;
+    reg [2:0]  cb_sr1;
+    reg [15:0] cb_addr1_mux;
+    reg [15:0] cb_addr2_mux;
+    reg [15:0] cb_sp_mux;
+    reg [15:0] cb_mar_mux;
+    // vector mux handled by interrupt controller
+
+    // psr mux is handled by multiple muxes
+    reg [2:0]  cb_cc_mux;
+    reg [2:0]  cb_pri_mux;
+    reg        cb_priv_mux;
+
+    reg [15:0] cb_sr2_mux;
+
+    reg [15:0] cb_addr_add;
+    reg [15:0] cb_pc_inc;
+    reg [15:0] cb_pc_dec;
+    reg [15:0] cb_alu;
+    reg [2:0]  cb_sr2;
+    reg [15:0] cb_sr1_out;
+    reg [15:0] cb_sr2_out;
+    reg [15:0] cb_alu_a;
+    reg [15:0] cb_alu_b;
+    reg [15:0] cb_base_r;
+    reg        cb_addr_mode; // determines value of sr2_mux
+    reg        cb_cc_n;
+    reg        cb_cc_z;
+    reg        cb_cc_p;
+
+    // interrupt stuff
+    reg [15:0] cb_sp_inc;
+    reg [15:0] cb_sp_dec;
+
+    always @(*) begin
+        /*
+         * intermediate signals
+         */
+        cb_addr_add = cb_addr1_mux + cb_addr2_mux;
+        cb_pc_inc = r_pc + 1;
+        cb_pc_dec = r_pc - 1;
+        cb_addr_mode = r_ir[5];
+        cb_sr2 = r_ir[2:0];
+        cb_sr1_out = r_reg[cb_sr1];
+        cb_sr2_out = r_reg[cb_sr2];
+        cb_alu_a = cb_sr1_out;
+        cb_alu_b = cb_sr2_mux;
+        cb_base_r = cb_sr1_out;
+
+        case (c_aluk)
+            0: cb_alu = cb_alu_a + cb_alu_b;
+            1: cb_alu = cb_alu_a &  cb_alu_b;
+            2: cb_alu = ~cb_alu_a;
+            3: cb_alu = cb_alu_a;
+            default: cb_alu = 16'bx;
+        endcase
+
+        // condition codes
+        cb_cc_n = bus[15];
+        cb_cc_z = (bus == 0);
+        cb_cc_p = !(cb_cc_n | cb_cc_z);
+
+        // interrupt signals
+        cb_sp_inc = cb_sr1_out + 1;
+        cb_sp_dec = cb_sr1_out - 1;
+
+        /*
+         * muxes
+         */
+        // pc mux
+        case (c_pc_mux)
+            0: cb_pc_mux = cb_pc_inc;
+            1: cb_pc_mux = bus;
+            2: cb_pc_mux = cb_addr_add;
+            default: cb_pc_mux = 16'bx;
+        endcase
+
+        // dr mux
+        case (c_dr_mux)
+            0: cb_dr = r_ir[11:9];
+            1: cb_dr = 3'd7;
+            2: cb_dr = 3'd6;
+            default: cb_dr = 3'bx;
+        endcase
+
+        // sr1 mux
+        case (c_sr1_mux)
+            0: cb_sr1 = r_ir[11:9];
+            1: cb_sr1 = r_ir[8:6];
+            2: cb_sr1 = 3'd6;
+            default: cb_sr1 = 3'bx;
+        endcase
+
+        // addr1 mux
+        case (c_addr1_mux)
+            0: cb_addr1_mux = r_pc;
+            1: cb_addr1_mux = cb_base_r;
+            default: cb_addr1_mux = 16'bx;
+        endcase
+
+        // addr2 mux
+        case (c_addr2_mux)
+            0: cb_addr2_mux = 16'd0;
+            1: cb_addr2_mux = {{10{r_ir[5]}}, r_ir[5:0]};
+            2: cb_addr2_mux = {{7{r_ir[8]}}, r_ir[8:0]};
+            3: cb_addr2_mux = {{5{r_ir[10]}}, r_ir[10:0]};
+            default: cb_addr2_mux = 16'bx;
+        endcase
+
+        // sp mux
+        case (c_sp_mux)
+            0: cb_sp_mux = cb_sp_inc;
+            1: cb_sp_mux = cb_sp_dec;
+            2: cb_sp_mux = r_s_ssp;
+            3: cb_sp_mux = r_s_usp;
+            default: cb_sp_mux = 16'bx;
+        endcase
+
+        // mar mux
+        case (c_mar_mux)
+            0: cb_mar_mux = {8'b0, r_ir[7:0]};
+            1: cb_mar_mux = cb_addr_add;
+            default: cb_mar_mux = 16'bx;
+        endcase
+
+        // psr mux
+        case (c_psr_mux)
+            0: begin
+                cb_cc_mux   = {cb_cc_n, cb_cc_z, cb_cc_p};
+                cb_pri_mux  = int_pri;
+                cb_priv_mux = c_set_priv;
+            end
+            1: begin
+                cb_cc_mux   = bus[2:0];
+                cb_pri_mux  = bus[10:8];
+                cb_priv_mux = bus[15];
+            end
+            default: begin
+                cb_cc_mux   = 3'bx;
+                cb_pri_mux  = 3'bx;
+                cb_priv_mux = 1'bx;
+            end
+        endcase
+
+        // sr2 mux (value, not reg number)
+        case (cb_addr_mode)
+            0: cb_sr2_mux = cb_sr2_out;
+            1: cb_sr2_mux = {{11{r_ir[4]}}, r_ir[4:0]};
+            default: cb_sr2_mux = 16'bx;
+        endcase
+    end
 
     always @(posedge clk) begin
+
     end
 
 endmodule
