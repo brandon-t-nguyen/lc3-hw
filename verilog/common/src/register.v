@@ -11,7 +11,7 @@ module register #(parameter WIDTH = 1)
         output  wire [WIDTH-1:0] d_o    // data out
     );
 
-    reg [WIDTH-1] data;
+    reg [WIDTH-1:0] data;
     assign d_o = data;
 
     always @(posedge clk) begin
