@@ -76,12 +76,12 @@ module mau
     reg [15:0] cb_in_mux;
 
     always @(*) begin
-        cb_mio_mux = cpu_mio_en ? cb_in_mux : bus;
-
         if (cb_mode == MODE_MEM)
             cb_in_mux = mem_rdata;
         else
             cb_in_mux = per_rdata;
+
+        cb_mio_mux = cpu_mio_en ? cb_in_mux : bus;
     end
 
     // mem/per STI master state machines
@@ -101,7 +101,7 @@ module mau
     spulse sp_mio_en(.in(cpu_mio_en), .clk(clk), .out(q_init_txn));
 
     always @(*) begin
-        o_rdy = 0;  // triggered when moving from busy to idle
+        o_rdy = 0;  // will be set if transitioning to IDLE
         o_ns = ST_IDLE;
         o_init_txn = 0;
 
@@ -111,6 +111,7 @@ module mau
                     o_init_txn = 1;
                     o_ns = ST_BUSY;
                 end else begin
+                    o_rdy = 1;
                     o_ns = ST_IDLE;
                 end
             end

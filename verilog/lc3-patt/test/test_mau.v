@@ -78,23 +78,113 @@ module test_mau;
 
         //  test a write to memory
         //      mem[0xdead]=0xbeef
-        bus = 16'hdead; cpu_ld_mar = 1;
+        bus = 16'hdead;
+        cpu_ld_mar = 1;
         @(posedge clk);
+        bus = 16'bz;
 
         cpu_ld_mar = 0;
         cpu_ld_mdr = 1;
+
         bus = 16'hbeef;
         @(posedge clk);
-        cpu_ld_mdr = 0;
+        bus = 16'bz;
 
+        cpu_ld_mdr = 0;
         cpu_rw = 1;
         cpu_mio_en = 1;
+
+        #1;
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xdead]=0xbeef: cpu_rdy != 0");
         @(posedge clk);
         //      at this point, the transaction has started
-        //      mem_init_txn should be strobed with wtxn
+        //      mem_init_txn and mem_wtxn should be strobed, w/ appropriate addr and data
         pass = (mem_init_txn === 1); overall_pass = overall_pass & pass;
-        if (!pass)
-            $display("write mem[0xdead]=0xbeef: mem_init_txn != 1");
+        if (!pass) $display("write mem[0xdead]=0xbeef: mem_init_txn != 1");
+
+        pass = (mem_wtxn === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xdead]=0xbeef: mem_wtxn != 1");
+
+        pass = (mem_addr === 16'hdead); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xdead]=0xbeef: mem_addr != 0xdead");
+
+        pass = (mem_wdata === 16'hbeef); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xdead]=0xbeef: mem_wdata != 0xbeef");
+
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xdead]=0xbeef: cpu_rdy != 0");
+
+        //      transaction has started
+        mem_rdy = 0;
+        //      delay a bit
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        mem_rdy = 1;
+
+        @(posedge clk);
+        //      cycle later, cpu should be ready
+        pass = (cpu_rdy === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xdead]=0xbeef: cpu_rdy != 1");
+
+        @(posedge clk);
+        cpu_rw = 0;
+        cpu_mio_en = 0;
+        @(posedge clk);
+
+
+        //  test a read from memory
+        //      mem[0xcafe]=0xbabe
+        bus = 16'hcafe;
+        cpu_ld_mar = 1;
+        @(posedge clk);
+        bus = 16'bz;
+
+        cpu_rw = 0;
+        cpu_mio_en = 1;
+        cpu_ld_mdr = 1;
+        cpu_ld_mar = 0;
+
+        #1;
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xcafe]=0xbabe: cpu_rdy != 0");
+
+        @(posedge clk);
+        //      at this point, txn has started
+        //      mem_init_txn should be strobed w/ appropriate addr
+        pass = (mem_init_txn === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xcafe]=0xbabe: mem_init_txn != 1");
+
+        pass = (mem_wtxn === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xcafe]=0xbabe: mem_wtxn != 1");
+
+        pass = (mem_addr === 16'hcafe); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xcafe]=0xbabe: mem_addr != 0xcafe");
+
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xcafe]=0xbabe: cpu_rdy != 0");
+
+        //      transaction has started
+        mem_rdy = 0;
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        mem_rdata = 16'hbabe;
+        mem_rdy = 1;
+        @(posedge clk);
+        pass = (cpu_rdy === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xcafe]=0xbabe: cpu_rdy != 1");
+
+        @(posedge clk);
+        cpu_rw = 0;
+        cpu_mio_en = 0;
+        cpu_ld_mdr  = 0;
+        cpu_gate_mdr = 1;
+        //      see if MDR gets on the bus
+        #1;
+        pass = (bus_shim === 16'hbabe); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xcafe]=0xbabe: bus != 0xbabe");
 
         #100;
 
