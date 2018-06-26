@@ -131,7 +131,7 @@ module mau
      */
 
     assign mem_init_txn = (cb_mode == MODE_MEM) & o_init_txn;
-    assign mem_init_txn = (cb_mode == MODE_PER) & o_init_txn;
+    assign per_init_txn = (cb_mode == MODE_PER) & o_init_txn;
 
     assign mem_wtxn = cpu_rw;
     assign per_wtxn = cpu_rw;
