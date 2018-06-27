@@ -1,3 +1,6 @@
+// This test is more for making sure the timing of the
+// signals is correct with basic use cases
+// This currently does not cover data-based edge cases
 module test_mau;
     reg clk;
     always #5 clk = ~clk;
@@ -186,6 +189,127 @@ module test_mau;
         pass = (bus_shim === 16'hbabe); overall_pass = overall_pass & pass;
         if (!pass) $display("read mem[0xcafe]=0xbabe: bus != 0xbabe");
 
+        @(posedge clk);
+        cpu_gate_mdr = 0;
+
+        @(posedge clk);
+
+
+        //  test a write to peripheral
+        //      mem[0xfe00]=0xedfe
+        bus = 16'hfe00;
+        cpu_ld_mar = 1;
+        @(posedge clk);
+        bus = 16'bz;
+
+        cpu_ld_mar = 0;
+        cpu_ld_mdr = 1;
+
+        bus = 16'hedfe;
+        @(posedge clk);
+        bus = 16'bz;
+
+        cpu_ld_mdr = 0;
+        cpu_rw = 1;
+        cpu_mio_en = 1;
+
+        #1;
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xfe00]=0xedfe: cpu_rdy != 0");
+
+        @(posedge clk);
+        //      at this point, the transaction has started
+        //      mem_init_txn and mem_wtxn should be strobed, w/ appropriate addr and data
+        pass = (per_init_txn === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xfe00]=0xedfe: per_init_txn != 1");
+
+        pass = (per_wtxn === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xfe00]=0xedfe: per_wtxn != 1");
+
+        pass = (per_addr === 8'h00); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xfe00]=0xedfe: per_addr != 0x00");
+
+        pass = (per_wdata === 16'hedfe); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xfe00]=0xedfe: per_wdata != 0xedfe");
+
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xfe00]=0xedfe: cpu_rdy != 0");
+
+        //      transaction has started
+        per_rdy = 0;
+        //      delay a bit
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        per_rdy = 1;
+
+        @(posedge clk);
+        //      cycle later, cpu should be ready
+        pass = (cpu_rdy === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("write mem[0xfe00]=0xedfe: cpu_rdy != 1");
+
+        @(posedge clk);
+        cpu_rw = 0;
+        cpu_mio_en = 0;
+        @(posedge clk);
+
+
+        //  test a read from peripheral
+        //      mem[0xfffe]=0x0df0
+        bus = 16'hfffe;
+        cpu_ld_mar = 1;
+        @(posedge clk);
+        bus = 16'bz;
+
+        cpu_rw = 0;
+        cpu_mio_en = 1;
+        cpu_ld_mdr = 1;
+        cpu_ld_mar = 0;
+
+        #1;
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xfffe]=0x0df0: cpu_rdy != 0");
+
+        @(posedge clk);
+        //      at this point, txn has started
+        //      per_init_txn should be strobed w/ appropriate addr
+        pass = (per_init_txn === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xfffe]=0x0df0: per_init_txn != 1");
+
+        pass = (per_wtxn === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xfffe]=0x0df0: per_wtxn != 1");
+
+        pass = (per_addr === 8'hff); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xfffe]=0x0df0: per_addr != 0xff");
+
+        pass = (cpu_rdy === 0); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xfffe]=0x0df0: cpu_rdy != 0");
+
+        //      transaction has started
+        per_rdy = 0;
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        per_rdata = 16'h0df0;
+        per_rdy = 1;
+        @(posedge clk);
+        pass = (cpu_rdy === 1); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xfffe]=0x0df0: cpu_rdy != 1");
+
+        @(posedge clk);
+        cpu_rw = 0;
+        cpu_mio_en = 0;
+        cpu_ld_mdr  = 0;
+        cpu_gate_mdr = 1;
+        //      see if MDR gets on the bus
+        #1;
+        pass = (bus_shim === 16'h0df0); overall_pass = overall_pass & pass;
+        if (!pass) $display("read mem[0xfffe]=0x0df0: bus != 0x0df0");
+
+        @(posedge clk);
+        cpu_gate_mdr = 0;
+
+        @(posedge clk);
         #100;
 
         if (overall_pass)

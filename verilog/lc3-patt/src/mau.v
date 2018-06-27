@@ -139,6 +139,10 @@ module mau
 
     assign mem_addr = r_mar;
     assign per_addr = (r_mar - 16'hfe00) >> 1;  // don't allow odd addresses
+                                                // we can compress the MMIO
+                                                // addr width since we know
+                                                // it starts at 0xfe00 and
+                                                // skips odd addresses
 
     assign mem_wdata = r_mdr;
     assign per_wdata = r_mdr;
