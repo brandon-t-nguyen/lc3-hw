@@ -19,6 +19,14 @@ test_rom.iver: src/rom.v test/test_rom.v
 	iverilog $(IVER_FLAGS) -s $(subst .iver,,$@) -o $@ $^
 	vvp $@
 
+test_clk_div_e.iver: src/clk_div.v test/test_clk_div.v
+	iverilog $(IVER_FLAGS) -s $(subst .iver,,$@) -o $@ $^
+	vvp $@
+
+test_clk_div_o.iver: src/clk_div.v test/test_clk_div.v
+	iverilog $(IVER_FLAGS) -s $(subst .iver,,$@) -o $@ $^
+	vvp $@
+
 clean:
 	rm -f *.iver
 	rm *.vcd
