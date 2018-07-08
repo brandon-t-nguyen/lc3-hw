@@ -317,7 +317,7 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         r_ben   <= 0;
     end
 
-    always @(posedge clk or arst_n) begin
+    always @(posedge clk or negedge arst_n) begin
         if (!arst_n) begin
             cs      <= 18;
             r_pc    <= 16'h3000;

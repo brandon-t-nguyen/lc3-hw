@@ -8,6 +8,10 @@ test_mem_microchip.iver: test/test_mem_microchip.v src/mem_microchip.v ../common
 	iverilog $(IVER_FLAGS) -s $(subst .iver,,$@) -o $@ $^
 	vvp $@
 
+test_cpu.iver: test/test_cpu.v src/cpu.v ../common/src/*.v
+	iverilog $(IVER_FLAGS) -s $(subst .iver,,$@) -o $@ $^
+	vvp $@
+
 clean:
 	rm -f *.iver
 	rm *.vcd
