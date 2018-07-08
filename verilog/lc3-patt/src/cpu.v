@@ -10,6 +10,7 @@
 
 module cpu #(parameter UCODE_PATH = "data/ucode.bin")
     (
+        input   wire        arst_n,
         input   wire        clk,
         inout   wire [15:0] bus,
 
@@ -304,33 +305,57 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
 
     tsb_h #(16) tsb_sp(cb_sp_mux, bus, c_gt_sp);
 
-    always @(posedge clk) begin
-        cs <= ns;
+    initial begin
+        cs      <= 18;
+        r_pc    <= 16'h3000;
+        r_ir    <= 16'h0000;
+        r_s_usp <= 16'hdead;
+        r_s_ssp <= 16'hbeef;
+        r_priv  <= 0;
+        r_pri   <= 0;
+        r_cc_n  <= 0;r_cc_z <= 1; r_cc_p <= 0;
+        r_ben   <= 0;
+    end
 
-        // register loads
-        // MAR, MDR handled by memory controller
-        if (c_ld_ir) r_ir <= bus;
-        if (c_ld_ben) begin
-            r_ben <= (r_ir[11:9] == a_cc);
-        end
-        if (c_ld_reg) r_reg[cb_dr] <= bus;
-        if (c_ld_cc) begin
-            r_cc_n <= cb_cc_mux[2];
-            r_cc_z <= cb_cc_mux[1];
-            r_cc_p <= cb_cc_mux[0];
-        end
-        if (c_ld_pc) r_pc <= cb_pc_mux;
-        if (c_ld_priv) r_priv <= cb_priv_mux;
-        if (c_ld_s_ssp) r_s_ssp <= cb_sr1_out;
-        if (c_ld_s_usp) r_s_usp <= cb_sr1_out;
+    always @(posedge clk or arst_n) begin
+        if (!arst_n) begin
+            cs      <= 18;
+            r_pc    <= 16'h3000;
+            r_ir    <= 16'h0000;
+            r_s_usp <= 16'hdead;
+            r_s_ssp <= 16'hbeef;
+            r_priv  <= 0;
+            r_pri   <= 0;
+            r_cc_n  <= 0; r_cc_z <= 1; r_cc_p <= 0;
+            r_ben   <= 0;
+        end else begin
+            cs <= ns;
 
-        // TODO: ask Patt what's the deal with LD.Priority
-        // WAR: hardwire this shit
-        if (
-            (c_set_priv && c_ld_priv) || // state 49
-            (c_ld_priv && c_ld_cc)       // state 40
-           )
-           r_pri <= cb_pri_mux;
+            // register loads
+            // MAR, MDR handled by memory controller
+            if (c_ld_ir) r_ir <= bus;
+            if (c_ld_ben) begin
+                r_ben <= (r_ir[11:9] == a_cc);
+            end
+            if (c_ld_reg) r_reg[cb_dr] <= bus;
+            if (c_ld_cc) begin
+                r_cc_n <= cb_cc_mux[2];
+                r_cc_z <= cb_cc_mux[1];
+                r_cc_p <= cb_cc_mux[0];
+            end
+            if (c_ld_pc) r_pc <= cb_pc_mux;
+            if (c_ld_priv) r_priv <= cb_priv_mux;
+            if (c_ld_s_ssp) r_s_ssp <= cb_sr1_out;
+            if (c_ld_s_usp) r_s_usp <= cb_sr1_out;
+
+            // TODO: ask Patt what's the deal with LD.Priority
+            // WAR: hardwire this shit
+            if (
+                (c_set_priv && c_ld_priv) || // state 49
+                (c_ld_priv && c_ld_cc)       // state 40
+               )
+               r_pri <= cb_pri_mux;
+       end
     end
 
 endmodule
