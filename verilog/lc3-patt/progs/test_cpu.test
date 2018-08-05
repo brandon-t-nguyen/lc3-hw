@@ -39,3 +39,9 @@ a m 300b h 3000
 
 n 1
 a pc h 301d
+
+n 1
+a r 0 h 300d
+
+n 1
+a r 1 h 3000

@@ -15,5 +15,6 @@ CONST   .fill   xDEAD       ; x300B:
 CONSTI  .fill   CONST       ; x300C:
 scratch .blkw   16          ; x300D:
 next
-        lea     r0, scratch ; x301D:
+        lea     r0, scratch ; x301D: assert r0 = x300d
+        ldr     r1, r0, #-2 ; x301C: assert r1 = x3000
 .end
