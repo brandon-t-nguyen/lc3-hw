@@ -96,6 +96,13 @@ module test_cpu;
                 else if (src == "pc") begin
                     status = $fscanf(file, "%c", base);
                 end
+                else if (src == "cc") begin
+                    status = $fscanf(file, "%c", base);
+                    if (base == "n") assert = 16'h0004;
+                    else if (base == "z") assert = 16'h0002;
+                    else if (base == "p") assert = 16'h0001;
+                    base = "\0";
+                end
 
                 if (base == "d") begin
                     status = $fscanf(file, "%d", assert);
@@ -113,6 +120,9 @@ module test_cpu;
                 else if (src == "pc") begin
                     actual = lc3.r_pc;
                 end
+                else if (src == "cc") begin
+                    actual = {lc3.r_cc_n, lc3.r_cc_z, lc3.r_cc_p};
+                end
 
                 test = (actual === assert);
                 if (pass && !test)
@@ -125,6 +135,21 @@ module test_cpu;
                         else if (base == "h") begin
                             $display("[%2d] Expected %s = 0x%04x, actual = 0x%04x", line, src, assert, actual);
                         end
+                    end
+                    else if (src == "cc") begin
+                            if (assert == 4) assert = "n";
+                            else if (assert == 2) assert = "z";
+                            else if (assert == 1) assert = "p";
+
+                            if (actual == 4 || actual == 2 || actual == 1) begin
+                                if (actual == 4) actual = "n";
+                                else if (actual == 2) actual = "z";
+                                else if (actual == 1) actual = "p";
+                                $display("[%2d] Expected cc = %s, actual = %s", line, assert, actual);
+                            end
+                            else begin
+                                $display("[%2d] Expected cc = %s, actual = %d", line, assert, actual);
+                            end
                     end
                     else begin
                         if (base == "d") begin
