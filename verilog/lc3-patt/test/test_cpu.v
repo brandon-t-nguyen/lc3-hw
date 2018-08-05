@@ -217,6 +217,8 @@ module mem #(parameter DATA_PATH = "data/test.img")
                 mdr <= bus;
         end
         if (ld_mar) mar <= bus;
+        if (rw)
+            ram[mar] <= mdr;
     end
 
 endmodule
