@@ -49,7 +49,7 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
     reg         r_cc_n;
     reg         r_cc_z;
     reg         r_cc_p;
-    wire [2:0]  a_cc = {r_cc_n, r_cc_z, r_cc_p};
+    wire [2:0]  a_cc = {r_cc_n, r_cc_z, r_cc_p}; // 'a' for 'alias'
 
     // other internal registers
     reg         r_ben;
@@ -340,7 +340,9 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
             // MAR, MDR handled by memory controller
             if (c_ld_ir) r_ir <= bus;
             if (c_ld_ben) begin
-                r_ben <= (r_ir[11:9] == a_cc);
+                r_ben <= (r_ir[11] && r_cc_n) ||
+                         (r_ir[10] && r_cc_z) ||
+                         (r_ir[ 9] && r_cc_p);
             end
             if (c_ld_reg) r_reg[cb_dr] <= bus;
             if (c_ld_cc) begin
