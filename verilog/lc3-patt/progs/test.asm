@@ -1,15 +1,9 @@
 .orig   x3000
-        ld  r0, cnt
-        ld  r1, val
+main
+        and     r0, r0, #0  ; x3000: assert r0 = 0
+        add     r1, r0, #10 ; x3001: assert r1 = 10
+        add     r2, r1, x-F ; x3002: assert r2 = -5
 
-        and r2, r2, #0
-loop
-        add r2, r2, r1
-        add r0, r0, #-1
-        brp loop
-
-        not r3, r2
-
-cnt     .fill   #10
-val     .fill   #5
+CONST   .fill   xDEAD
+CONSTI  .FILL   CONST
 .end

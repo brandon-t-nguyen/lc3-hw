@@ -58,12 +58,19 @@ module test_cpu;
     initial begin
         $dumpfile("wave_cpu.vcd");
         $dumpvars(0, test_cpu);
+        for (i = 0; i < 8; i = i + 1) begin
+            $dumpvars(0, lc3.r_reg[i]);
+        end
 
         clk = 0;
         arst_n = 1;
+        #1;
+        arst_n = 0;
+        #1;
+        arst_n = 1;
 
         pass = 1;
-        file = $fopen("test_cpu.test", "r");
+        file = $fopen("progs/test_cpu.test", "r");
         line = 0;
 
         while (!$feof(file)) begin
@@ -107,16 +114,16 @@ module test_cpu;
                     actual = lc3.r_pc;
                 end
 
-                test = (actual == assert);
+                test = (actual === assert);
                 if (pass && !test)
                     pass = 0;
                 if (!test) begin
                     if (src == "pc") begin
                         if (base == "d") begin
-                            $display("[%2d]Expected %s = %d, actual = %d", line, src, assert, actual);
+                            $display("[%2d] Expected %s = %d, actual = %d", line, src, assert, actual);
                         end
                         else if (base == "h") begin
-                            $display("[%2d] Expected %s = 0x%04x, actual = 0x%04x", line, idx, assert, actual);
+                            $display("[%2d] Expected %s = 0x%04x, actual = 0x%04x", line, src, assert, actual);
                         end
                     end
                     else begin
@@ -137,7 +144,7 @@ module test_cpu;
 
 endmodule
 
-module mem #(parameter DATA_PATH = "data/test.hex")
+module mem #(parameter DATA_PATH = "data/test.img")
     (
         input clk,
         inout [15:0] bus,
