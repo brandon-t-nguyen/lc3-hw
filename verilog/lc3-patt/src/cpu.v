@@ -147,7 +147,37 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
     reg [15:0] cb_sp_inc;
     reg [15:0] cb_sp_dec;
 
+    /*
+     * microsequencer
+     */
+    reg [5:0]  ns; // next micro-address
+
+    // qualifiers for the usequencer
+    wire q_mem_rdy   = mem_rdy;
+    wire q_branch    = r_ben;
+    wire q_addr_mode = r_ir[11];
+    wire q_priv      = r_priv;
+    wire q_interrupt = int_pri > r_pri;
     always @(*) begin
+        // usequencer
+        if (c_ird) begin
+            ns = {12'b0, r_ir[15:12]};
+        end
+        else begin
+            ns[5] = c_j[5];
+            ns[4] = c_j[4] | (q_interrupt && c_cond == 5);
+            ns[3] = c_j[3] | (q_priv      && c_cond == 4);
+            ns[2] = c_j[2] | (q_branch    && c_cond == 2);
+            ns[1] = c_j[1] | (q_mem_rdy   && c_cond == 1);
+            ns[0] = c_j[0] | (q_addr_mode && c_cond == 3);
+        end
+
+        // internal combinational signals
+        // inexplicibly, putting the stuff below
+        // in its own always @(*) block results in some weird
+        // bug in not firing again when some signals get changed
+        // e.g. signal feeding a mux is updated, the mux doesn't pass
+        // on that updated value
         /*
          * intermediate signals
          */
@@ -263,31 +293,6 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
             1: cb_sr2_mux = {{11{r_ir[4]}}, r_ir[4:0]};
             default: cb_sr2_mux = 16'bx;
         endcase
-    end
-
-    /*
-     * microsequencer
-     */
-    reg [5:0]  ns; // next micro-address
-
-    // qualifiers for the usequencer
-    wire q_mem_rdy   = mem_rdy;
-    wire q_branch    = r_ben;
-    wire q_addr_mode = r_ir[11];
-    wire q_priv      = r_priv;
-    wire q_interrupt = int_pri > r_pri;
-    always @(*) begin
-        if (c_ird) begin
-            ns = {12'b0, r_ir[15:12]};
-        end
-        else begin
-            ns[5] = c_j[5];
-            ns[4] = c_j[4] | (q_interrupt && c_cond == 5);
-            ns[3] = c_j[3] | (q_priv      && c_cond == 4);
-            ns[2] = c_j[2] | (q_branch    && c_cond == 2);
-            ns[1] = c_j[1] | (q_mem_rdy   && c_cond == 1);
-            ns[0] = c_j[0] | (q_addr_mode && c_cond == 3);
-        end
     end
 
     /*
