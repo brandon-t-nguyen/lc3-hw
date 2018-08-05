@@ -51,7 +51,8 @@ module test_cpu;
     integer test;
     integer status;
     reg [15:0] src;
-    reg [7:0] cmd, idx, base;
+    reg [7:0] cmd, base;
+    reg [15:0] idx;
     reg [15:0] assert;
     reg [15:0] actual;
 
@@ -90,8 +91,11 @@ module test_cpu;
                 status = $fscanf(file, "%s ", src);
                 //status = $fscanf(file, "%c %d %c", src, idx, base);
 
-                if (src == "r" || src == "m") begin
+                if (src == "r") begin
                     status = $fscanf(file, "%d %c", idx, base);
+                end
+                else if (src == "m") begin
+                    status = $fscanf(file, "%x %c", idx, base);
                 end
                 else if (src == "pc") begin
                     status = $fscanf(file, "%c", base);
@@ -151,12 +155,20 @@ module test_cpu;
                                 $display("[%2d] Expected cc = %s, actual = %d", line, assert, actual);
                             end
                     end
-                    else begin
+                    else if (src == "r") begin
                         if (base == "d") begin
                             $display("[%2d] Expected %s[%2d] = %d, actual = %d", line, src, idx, assert, actual);
                         end
                         else if (base == "h") begin
                             $display("[%2d] Expected %s[%2d] = 0x%04x, actual = 0x%04x", line, src, idx, assert, actual);
+                        end
+                    end
+                    else if (src == "m") begin
+                        if (base == "d") begin
+                            $display("[%2d] Expected %s[0x%04x] = %d, actual = %d", line, src, idx, assert, actual);
+                        end
+                        else if (base == "h") begin
+                            $display("[%2d] Expected %s[0x%04x] = 0x%04x, actual = 0x%04x", line, src, idx, assert, actual);
                         end
                     end
                 end
