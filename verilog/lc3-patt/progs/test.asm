@@ -10,11 +10,14 @@ main
         not     r4, r4      ; x3007: assert r4 = x2152
         st      r4, CONST   ; x3008: assert mem[x300B] = x2152
         sti     r6, CONSTI  ; x3009: assert mem[x300B] = x3000
-        br      next        ; x300A: assert pc = x301D
+        br      ldr_str     ; x300A: assert pc = x301D
 CONST   .fill   xDEAD       ; x300B:
 CONSTI  .fill   CONST       ; x300C:
 scratch .blkw   16          ; x300D:
-next
+ldr_str
         lea     r0, scratch ; x301D: assert r0 = x300d
-        ldr     r1, r0, #-2 ; x301C: assert r1 = x3000
+        ldr     r1, r0, #-2 ; x301E: assert r1 = x3000
+        add     r1, r1, #15 ; x301F: assert r1 = x300f
+        str     r1, r0, #6  ; x3020: assert mem[x3013] = x300f
+        ldr     r2, r0, #6  ; x3021: assert r2 = x300f
 .end
