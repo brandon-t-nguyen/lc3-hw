@@ -76,7 +76,13 @@ module test_cpu;
 
         while (!$feof(file)) begin
             status = $fscanf(file, "%c ", cmd);
-            if (cmd == "n") begin
+            // comment
+            if (cmd == "#") begin
+                while (cmd != "\n") begin
+                    status = $fscanf(file, "%c", cmd);
+                end
+            end
+            else if (cmd == "n") begin
                 line = line + 1;
                 assert = 1;
                 status = $fscanf(file, "%d ", assert);
@@ -87,7 +93,7 @@ module test_cpu;
             end
             // assert
             else if (cmd == "a") begin
-                line = line + 1;
+                //line = line + 1;
                 status = $fscanf(file, "%s ", src);
                 //status = $fscanf(file, "%c %d %c", src, idx, base);
 
@@ -170,6 +176,9 @@ module test_cpu;
                         else if (base == "h") begin
                             $display("[%2d] Expected %s[0x%04x] = 0x%04x, actual = 0x%04x", line, src, idx, assert, actual);
                         end
+                    end
+                    else begin
+                        $display("Unknown src: src = %s, assert = 0x%04x, actual = 0x%04x", src, assert, actual);
                     end
                 end
             end
