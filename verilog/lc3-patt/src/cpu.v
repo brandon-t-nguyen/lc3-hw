@@ -172,15 +172,18 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
             ns[0] = c_j[0] | (q_addr_mode && c_cond == 3);
         end
 
-        // internal combinational signals
-        // inexplicibly, putting the stuff below
-        // in its own always @(*) block results in some weird
-        // bug in not firing again when some signals get changed
-        // e.g. signal feeding a mux is updated, the mux doesn't pass
-        // on that updated value
-        /*
-         * intermediate signals
-         */
+    end
+
+    // internal combinational signals
+    // inexplicibly, putting the stuff below
+    // in its own always @(*) block results in some weird
+    // bug in not firing again when some signals get changed
+    // e.g. signal feeding a mux is updated, the mux doesn't pass
+    // on that updated value
+    /*
+     * intermediate signals
+     */
+    always @(*) begin
         cb_addr_add = cb_addr1_mux + cb_addr2_mux;
         cb_pc_inc = r_pc + 1;
         cb_pc_dec = r_pc - 1;
@@ -192,14 +195,6 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         cb_alu_b = cb_sr2_mux;
         cb_base_r = cb_sr1_out;
 
-        case (c_aluk)
-            0: cb_alu = cb_alu_a + cb_alu_b;
-            1: cb_alu = cb_alu_a &  cb_alu_b;
-            2: cb_alu = ~cb_alu_a;
-            3: cb_alu = cb_alu_a;
-            default: cb_alu = 16'bx;
-        endcase
-
         // condition codes
         cb_cc_n = bus[15];
         cb_cc_z = (bus == 0);
@@ -208,6 +203,19 @@ module cpu #(parameter UCODE_PATH = "data/ucode.bin")
         // interrupt signals
         cb_sp_inc = cb_sr1_out + 1;
         cb_sp_dec = cb_sr1_out - 1;
+    end
+
+    /*
+     * muxes
+     */
+    always @(*) begin
+        case (c_aluk)
+            0: cb_alu = cb_alu_a + cb_alu_b;
+            1: cb_alu = cb_alu_a &  cb_alu_b;
+            2: cb_alu = ~cb_alu_a;
+            3: cb_alu = cb_alu_a;
+            default: cb_alu = 16'bx;
+        endcase
 
         /*
          * muxes
