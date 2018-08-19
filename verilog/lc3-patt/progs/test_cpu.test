@@ -87,3 +87,29 @@ n 1
 a r 0 d 30
 n 1
 a pc h 3026
+
+# jsrr double
+n 1
+a pc h 3028
+a r 7 h 3027
+n 1
+a r 0 d 60
+n 1
+a pc h 3027
+
+# trap test
+n 1
+a pc h 302a
+
+# lea r0, trap_routine
+n 1
+a r 0 h 302e
+
+# sti r0, TRAP_VEC
+n 1
+a m 25 h 302e
+
+# trap x25
+n 1
+a pc h 302e
+a r 7 h 302d
