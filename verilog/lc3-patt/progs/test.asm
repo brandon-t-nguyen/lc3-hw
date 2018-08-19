@@ -20,4 +20,21 @@ ldr_str
         add     r1, r1, #15 ; x301F: assert r1 = x300f
         str     r1, r0, #6  ; x3020: assert mem[x3013] = x300f
         ldr     r2, r0, #6  ; x3021: assert r2 = x300f
+jsr_jsrr
+        and     r0, r0, #0  ; x3022
+        add     r0, r0, #15 ; x3023: assert r0 = 15
+        lea     r1, double  ; x3024: assert r1 = x3028
+        jsr     double      ; x3025; assert r7 = x3026, assert r0 = 30
+        jsrr    r1          ; x3026; assert r7 = x3027, assert r0 = 60
+        br      trap_test   ; x3027
+double
+        add     r0, r0, r0  ; x3028
+        ret                 ; x3029
+trap_test
+        lea     r0, trap_routine    ; x302A
+        sti     r0, TRAP_VEC        ; x302B
+        trap    x25                 ; x302C
+TRAP_VEC    .fill   x0025           ; x302D
+trap_routine
+        ret                         ; x302E
 .end

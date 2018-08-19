@@ -70,3 +70,20 @@ a m 3013 h 300f
 # ldr r2, r0, #6
 n 1
 a r 2 h 300f
+
+# and r0, r0, #0; add r0, r0, #15
+n 2
+a r 0 d 15
+
+# lea r1, double
+n 1
+a r 1 h x3028
+
+# jsr double
+n 1
+a pc h 3028
+a r 7 h 3026
+n 1
+a r 0 d 30
+n 1
+a pc h 3026
