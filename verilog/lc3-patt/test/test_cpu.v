@@ -203,31 +203,49 @@ module mem #(parameter DATA_PATH = "data/test.img")
         input wire rw
     );
 
+    localparam DELAY = 10;
+    localparam DELAY_N = $clog2(DELAY);
+    reg [DELAY_N-1:0] cnt;
+
     reg [15:0] ram [0:65535];
 
     reg [15:0] mar;
     reg [15:0] mdr;
 
     tsb_h #(16) tsb_mdr(mdr, bus, gate_mdr);
-    assign rdy = 1;
+    assign rdy = (cnt == 0);
 
     integer i;
     initial begin
         for (i = 0; i < 16'hfe00; i = i + 1)
             ram[i] = 16'h0000;
         $readmemh(DATA_PATH, ram);
+        cnt = 0;
     end
 
     always @(posedge clk) begin
         if (ld_mdr) begin
             if (mio_en)
-                mdr <= ram[mar];
+                if (cnt == 0) begin
+                    mdr <= ram[mar];
+                    cnt <= DELAY;
+                end else begin
+                    cnt <= cnt - 1;
+                end
             else
                 mdr <= bus;
         end
         if (ld_mar) mar <= bus;
-        if (rw)
-            ram[mar] <= mdr;
+        if (rw) begin
+            if (mio_en) begin
+                if (cnt == 0) begin
+                    ram[mar] <= mdr;
+                    cnt <= DELAY;
+                end else begin
+                    cnt <= cnt - 1;
+                end
+            end
+        end
     end
 
 endmodule
